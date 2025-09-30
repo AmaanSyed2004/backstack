@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  accounts-service:
+    build: ./services/accounts-service
+    container_name: accounts-service
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: password
+      DB_NAME: backstack_accounts
+    networks:
+      - backstack-net
+
+  schema-service:
+    build: ./services/schema-service
+    container_name: schema-service
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: password
+      DB_NAME: backstack_schema
+    networks:
+      - backstack-net
+
+  api-gateway:
+    build: ./infra/nginx
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - accounts-service
+      - schema-service
+    networks:
+      - backstack-net
+
+  db:
+    image: postgres:15
+    container_name: backstack-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: backstack_accounts   
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backstack-net
+
+networks:
+  backstack-net:
+    driver: bridge
+
+volumes:
+  db-data:

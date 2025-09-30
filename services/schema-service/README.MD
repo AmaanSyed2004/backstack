@@ -1,0 +1,1 @@
+This service is for management of collections created by the user for each project.
