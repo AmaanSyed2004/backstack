@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = function(req, res, next) {
+module.exports = function (req, res, next) {
   const authHeader = req.headers.authorization; //auth will only by done via the request header : no cookies
   if (!authHeader) return res.status(401).json({ error: "No token" });
 

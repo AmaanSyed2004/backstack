@@ -1,28 +1,28 @@
-const express= require('express');
-const sequelize = require('./config/db');
+const express = require("express");
+const sequelize = require("./config/db");
 
-require('dotenv').config();
+require("dotenv").config();
 require("./models/User");
 require("./models/Project");
 require("./models/apiKey");
 
-const app = express()
+const app = express();
 
 app.use(express.json());
 
-app.use('/auth', require('./routes/auth.routes'));
+app.use("/auth", require("./routes/auth.routes"));
 
-app.use('/project', require('./routes/project.routes'));
+app.use("/project", require("./routes/project.routes"));
 
-app.get('/health',(req,res)=>{
-    res.send('OK')
-})
+app.get("/health", (req, res) => {
+  res.send("OK");
+});
 
 sequelize
-  .sync({ alter: true }) 
+  .sync({ alter: true })
   .then(() => console.log("Database synced"))
-  .catch(err => console.error("DB sync error:", err));
+  .catch((err) => console.error("DB sync error:", err));
 
 app.listen(4000, () => {
-  console.log('Server is running on port 4000')
-})
+  console.log("Server is running on port 4000");
+});

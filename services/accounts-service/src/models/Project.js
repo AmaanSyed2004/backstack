@@ -6,10 +6,10 @@ const Project = sequelize.define("Project", {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    primaryKey: true,
   },
   name: { type: DataTypes.STRING, allowNull: false },
-  plan: { type: DataTypes.STRING, defaultValue: "free" }
+  plan: { type: DataTypes.STRING, defaultValue: "free" },
 });
 
 Project.belongsTo(User, { foreignKey: "ownerId" });

@@ -6,9 +6,9 @@ const APIKey = sequelize.define("APIKey", {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    primaryKey: true,
   },
-  key: { type: DataTypes.STRING, allowNull: false }
+  key: { type: DataTypes.STRING, allowNull: false },
 });
 
 APIKey.belongsTo(Project, { foreignKey: "projectId" });

@@ -5,20 +5,20 @@ const CollectionSchema = sequelize.define("CollectionSchema", {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    primaryKey: true,
   },
   projectId: {
     type: DataTypes.UUID,
-    allowNull: false
+    allowNull: false,
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
   },
   schemaJson: {
     type: DataTypes.JSONB,
-    allowNull: false
-  }
+    allowNull: false,
+  },
 });
 
 module.exports = CollectionSchema;
