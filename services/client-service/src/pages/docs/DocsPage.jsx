@@ -2,7 +2,7 @@
 
 import { BookOpen, Search, ExternalLink, Code2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 import { Input } from "@/components/ui/input";
 
 const docSections = [

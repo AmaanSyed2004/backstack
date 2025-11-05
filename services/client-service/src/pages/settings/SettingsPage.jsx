@@ -4,7 +4,7 @@ import { Settings, Bell, Lock, Palette, Users, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 
 const settingsSections = [
   {

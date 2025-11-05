@@ -1,7 +1,7 @@
 import { Database, Plus, Edit2, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 
 const mockSchemas = [
   {

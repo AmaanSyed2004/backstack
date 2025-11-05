@@ -2,7 +2,7 @@
 
 import { Key, Copy, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 import { useState } from "react";
 
 const apiKeys = [

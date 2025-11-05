@@ -2,7 +2,7 @@
 
 import { LayoutDashboard, TrendingUp, Users, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 import {
   LineChart,
   Line,

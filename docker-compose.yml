@@ -31,6 +31,12 @@ services:
     networks:
       - backstack-net
 
+  client-service:
+    build: ./services/client-service
+    container_name: client-service
+    restart: always
+    ports:
+      - "5173:5173"
   api-gateway:
     build: ./infra/nginx
     container_name: api-gateway
