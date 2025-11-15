@@ -11,10 +11,16 @@ import {
   Menu,
   Globe,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // clear JWT
+    navigate("/"); // redirect to login
+  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
@@ -80,7 +86,10 @@ const Sidebar = () => {
 
         {/* Footer */}
         <div className="pt-6 border-t border-zinc-800">
-          <button className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-zinc-900 transition-all duration-200 group">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-zinc-900 transition-all duration-200 group"
+          >
             <LogOut className="w-5 h-5 group-hover:text-white transition-colors" />
             <span className="font-semibold text-sm">Logout</span>
           </button>

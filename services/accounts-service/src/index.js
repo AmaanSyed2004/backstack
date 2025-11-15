@@ -1,5 +1,6 @@
 const express = require("express");
 const sequelize = require("./config/db");
+const cors = require("cors");
 
 require("dotenv").config();
 require("./models/User");
@@ -7,6 +8,11 @@ require("./models/Project");
 require("./models/apiKey");
 
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 
 app.use(express.json());
 

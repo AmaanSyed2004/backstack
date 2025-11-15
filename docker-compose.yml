@@ -13,6 +13,10 @@ services:
       DB_USER: postgres
       DB_PASS: password
       DB_NAME: backstack_accounts
+    volumes:
+      - ./services/accounts-service:/app
+      - /app/node_modules
+    command: npm run dev
     networks:
       - backstack-net
 
@@ -28,6 +32,10 @@ services:
       DB_USER: postgres
       DB_PASS: password
       DB_NAME: backstack_schema
+    volumes:
+      - ./services/schema-service:/app
+      - /app/node_modules
+    command: npm run dev
     networks:
       - backstack-net
 
@@ -37,6 +45,12 @@ services:
     restart: always
     ports:
       - "5173:5173"
+    volumes:
+      - ./services/client-service:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - backstack-net
   api-gateway:
     build: ./infra/nginx
     container_name: api-gateway

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import api from "@/api/axios";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,10 +9,34 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(isLogin ? "Logged in (mock)" : "Signed up (mock)");
-    window.location.href = "/dashboard";
+
+    try {
+      if (isLogin) {
+        // LOGIN API
+        const res = await api.post("account/auth/login", {
+          email,
+          password,
+        });
+
+        localStorage.setItem("token", res.data.token);
+        window.location.href = "/dashboard";
+      } else {
+        // SIGNUP API
+        const res = await api.post("account/auth/signup", {
+          fullName,
+          email,
+          password,
+        });
+
+        alert("Account created. You can login now!");
+        setIsLogin(true);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err || "Something went wrong");
+    }
   };
 
   return (
