@@ -26,16 +26,32 @@ services:
     restart: always
     depends_on:
       - db
+      - redis
     environment:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASS: password
       DB_NAME: backstack_schema
-    volumes:
-      - ./services/schema-service:/app
-      - /app/node_modules
-    command: npm run dev
+      REDIS_URL: redis://redis:6379
+    networks:
+      - backstack-net
+
+  crud-service:
+    build: ./services/crud-service
+    container_name: crud-service
+    restart: always
+    depends_on:
+      - db
+      - redis
+      - schema-service
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/backstack_schema
+      REDIS_URL: redis://redis:6379
+      PORT: 4001
+      DB_SSL: "false"
+    ports:
+      - "4001:4001"   # optional: expose for testing; can be removed in prod
     networks:
       - backstack-net
 
@@ -60,6 +76,7 @@ services:
     depends_on:
       - accounts-service
       - schema-service
+      - crud-service
     networks:
       - backstack-net
 
@@ -75,9 +92,22 @@ services:
     networks:
       - backstack-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: backstack-redis
+    restart: always
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"   # optional, can be removed if only internal
+    volumes:
+      - redis-data:/data
+    networks:
+      - backstack-net
+
 networks:
   backstack-net:
     driver: bridge
 
 volumes:
   db-data:
+  redis-data:

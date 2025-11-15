@@ -9,11 +9,12 @@ exports.createCollection = async (req, res) => {
       return res.status(400).json({ error: "Name and fields are required" });
     }
     // fields should be an array of objects with name and type
-    if (!Array.isArray(fields) || !fields.every((f) => f.name && f.type)) {
-      return res
-        .status(400)
-        .json({ error: "Fields must be an array of {name, type} objects" });
-    }
+    // if (!Array.isArray(fields) || !fields.every((f) => f.name && f.type)) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "Fields must be an array of {name, type} objects" });
+    // }
+    //need to add validation using ajv here
     //check id if collection with same name exists for the project
     const existing = await CollectionSchema.findOne({
       where: { projectId, name },
