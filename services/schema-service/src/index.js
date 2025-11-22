@@ -6,9 +6,10 @@ require("./models/Collections");
 const app = express();
 app.use(express.json());
 
+app.get("/health", (req, res) => res.send("OK"));
+
 app.use("/", require("./routes/schema.routes"));
 
-app.get("/health", (req, res) => res.send("OK"));
 
 sequelize
   .sync({ alter: true })
