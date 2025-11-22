@@ -11,4 +11,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: true,      // Needed for Docker to map the port correctly
+    port: 5173,      // Ensures the port matches your docker-compose
+    watch: {
+      usePolling: true, // The critical fix for hot-reloading in Docker
+    },
+  },
 })
