@@ -31,6 +31,7 @@ const Sidebar = () => {
     { icon: BarChart3, label: "Usage & Billing", href: "/billing" },
     { icon: BookOpen, label: "Docs", href: "/docs" },
     { icon: Settings, label: "Settings", href: "/settings" },
+    { icon: BookOpen, label: "Projects", href: "/project" },
   ];
 
   return (
@@ -83,7 +84,7 @@ const Sidebar = () => {
             </NavLink>
           ))}
         </nav>
-
+        
         {/* Footer */}
         <div className="pt-6 border-t border-zinc-800">
           <button

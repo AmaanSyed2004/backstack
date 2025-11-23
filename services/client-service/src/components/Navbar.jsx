@@ -8,9 +8,9 @@ export default function Navbar() {
         <Link to="/dashboard" className="hover:underline">
           Dashboard
         </Link>
-        <Link to="/projects" className="hover:underline">
+        {/* <Link to="/projects" className="hover:underline">
           Projects
-        </Link>
+        </Link> */}
         <Link to="/schemas" className="hover:underline">
           Schemas
         </Link>
@@ -23,6 +23,9 @@ export default function Navbar() {
         <Link to="/docs" className="hover:underline">
           Docs
         </Link>
+        <Link to="/project" className="hover:underline">
+          Project
+        </Link> 
       </div>
     </nav>
   );

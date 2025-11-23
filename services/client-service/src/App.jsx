@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./pages/auth/AuthPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
-import ProjectsPage from "./pages/projects/ProjectsPage";
 import SchemasPage from "./pages/schemas/SchemasPage";
 import APIsPage from "./pages/apis/APIsPage";
 import BillingPage from "./pages/billing/BillingPage";
@@ -10,6 +9,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import CRUDService from "./pages/crud-service/CRUDService";
 import AuthService from "./pages/auth-service/AuthService";
 import SettingsPage from "./pages/settings/SettingsPage";
+import NewProjectPage from "./pages/new-project/NewProjectPage";
 
 export default function App() {
   const isAuthenticated = true; // mock for now
@@ -26,14 +26,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/projects"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <ProjectsPage />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/schemas"
           element={
@@ -87,6 +87,14 @@ export default function App() {
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/project"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <NewProjectPage />
             </ProtectedRoute>
           }
         />
