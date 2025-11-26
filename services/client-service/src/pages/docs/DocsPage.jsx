@@ -1,9 +1,7 @@
-"use client";
-
 import { useState } from "react";
 import { BookOpen, Search, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 import { Input } from "@/components/ui/input";
 
 const sections = [
