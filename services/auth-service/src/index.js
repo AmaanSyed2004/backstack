@@ -2,17 +2,13 @@ const express = require("express");
 const sequelize = require("./config/db");
 
 require("dotenv").config();
-require("./models/User");
-require("./models/Project");
-require("./models/apiKey");
+require("./models/EndUser.js");
 
 const app = express();
 
 app.use(express.json());
 
-app.use("/auth", require("./routes/auth.routes"));
-
-app.use("/project", require("./routes/project.routes"));
+app.use("/", require("./routes/auth.routes"));
 
 app.get("/health", (req, res) => {
   res.send("OK");
@@ -23,6 +19,6 @@ sequelize
   .then(() => console.log("Database synced"))
   .catch((err) => console.error("DB sync error:", err));
 
-app.listen(4000, () => {
-  console.log("Server is running on port 4000");
+app.listen(4003, () => {
+  console.log("Server is running on port 4003");
 });

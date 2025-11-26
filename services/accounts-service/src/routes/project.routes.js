@@ -4,14 +4,16 @@ const {
   createProject,
   getProjects,
   createApiKey,
-  getApiKeys, // Import the new function
+  getProjectById,
+  getApiKeys, 
 } = require("../controllers/project.controller");
 
 router.post("/", auth, createProject);
 router.get("/", auth, getProjects);
+router.get("/:id", getProjectById);
 
 // API Key Routes
 router.post("/:id/api-key", auth, createApiKey);
-router.get("/:id/api-key", auth, getApiKeys); // Add this GET route
+router.get("/:id/api-key", auth, getApiKeys); 
 
 module.exports = router;

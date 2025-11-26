@@ -29,6 +29,25 @@ const getProjects = async (req, res) => {
   }
 };
 
+// new function, will be used by the auth microservice (i think)
+const getProjectById = async (req, res) => {
+  try {
+    console.log('Getting project by ID:', req.params.id);
+    const { id } = req.params;
+    const project = await Project.findByPk(req.params.id, {
+      attributes: ["id", "name", "plan", "ownerId"],
+    });
+    if (!project) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Project not found." });
+    }
+    res.json({ success: true, project });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // --- NEW FUNCTION ---
 const getApiKeys = async (req, res) => {
   try {
@@ -36,7 +55,7 @@ const getApiKeys = async (req, res) => {
 
     const keys = await APIKey.findAll({
       where: { projectId: id },
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({ success: true, keys });
@@ -59,6 +78,7 @@ const createApiKey = async (req, res) => {
 module.exports = {
   createProject,
   getProjects,
+  getProjectById,
   createApiKey,
   getApiKeys, // Don't forget to export this
 };

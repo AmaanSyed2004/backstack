@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcryptjs");
 const rounds = 10;
 
 async function hashPassword(plaintext) {

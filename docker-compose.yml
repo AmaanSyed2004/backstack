@@ -50,8 +50,25 @@ services:
       REDIS_URL: redis://redis:6379
       PORT: 4001
       DB_SSL: "false"
-    ports:
-      - "4001:4001"   # optional: expose for testing; can be removed in prod
+    networks:
+      - backstack-net
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth-service
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: password
+      DB_NAME: backstack_accounts
+    volumes:
+      - ./services/auth-service:/app
+      - /app/node_modules
+    command: npm run dev
     networks:
       - backstack-net
 
@@ -67,6 +84,7 @@ services:
     command: npm run dev
     networks:
       - backstack-net
+
   api-gateway:
     build: ./infra/nginx
     container_name: api-gateway
@@ -86,7 +104,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: backstack_accounts   
+      POSTGRES_DB: backstack_accounts
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
@@ -98,7 +116,7 @@ services:
     restart: always
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports:
-      - "6379:6379"   # optional, can be removed if only internal
+      - "6379:6379" # optional, can be removed if only internal
     volumes:
       - redis-data:/data
     networks:

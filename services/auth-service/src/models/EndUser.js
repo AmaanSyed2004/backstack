@@ -40,5 +40,5 @@ const endUser = sequelize.define(
     ],
   }
 );
-endUser.belongsTo(require("./Project"), {foreignKey: "projectId"});
+// the project ID here will NOT be a foriegn key, rather will be filled using a GET request to the accounts service to verify the project exists
 module.exports = endUser;

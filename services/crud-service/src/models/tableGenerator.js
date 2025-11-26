@@ -23,10 +23,7 @@ async function ensureTable(projectId, collection, schema) {
       updated_at TIMESTAMPTZ DEFAULT now()
     );
   `);
-  console.table(schema)
-  console.table(schema.fields)
-  console.table(schema.fields.properties)
-  console.table(props);
+
   for (const [field, def] of Object.entries(props)) {
     const colType = mapType(def);
     await db.query(

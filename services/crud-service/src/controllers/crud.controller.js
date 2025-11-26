@@ -38,8 +38,8 @@ exports.listRecords = async (req, res) => {
     const { projectId, collection } = req.params;
     const schemaData = await getSchema(projectId, collection);
     if (!schemaData) return res.status(404).json({ error: 'Schema not found' });
-
-    const table = await ensureTable(projectId, collection, schemaData.schemaJson);
+    const collectionName = await getCollectionName(collection);
+    const table = await ensureTable(projectId, collectionName, schemaData.schemaJson);
     const limit = Math.min(parseInt(req.query.limit || 25), 100);
     const offset = parseInt(req.query.offset || 0);
     const sql = `SELECT * FROM "${table}" ORDER BY id DESC LIMIT $1 OFFSET $2`;
@@ -56,8 +56,8 @@ exports.getRecord = async (req, res) => {
     const { projectId, collection, id } = req.params;
     const schemaData = await getSchema(projectId, collection);
     if (!schemaData) return res.status(404).json({ error: 'Schema not found' });
-
-    const table = getTableName(projectId, collection);
+    const collectionName = await getCollectionName(collection);
+    const table = getTableName(projectId, collectionName);
     const sql = `SELECT * FROM "${table}" WHERE id = $1`;
     const result = await db.query(sql, [id]);
 
@@ -78,8 +78,8 @@ exports.updateRecord = async (req, res) => {
     const validator = getValidator(projectId, collection, schemaData.schemaJson);
     if (!validator(req.body))
       return res.status(400).json({ errors: validator.errors });
-
-    const table = getTableName(projectId, collection);
+    const collectionName = await getCollectionName(collection);
+    const table = getTableName(projectId, collectionName);
     const fields = Object.keys(req.body);
     const setClause = fields.map((f, i) => `"${f}" = $${i + 1}`).join(', ');
     const sql = `UPDATE "${table}" SET ${setClause}, updated_at = now() WHERE id = $${
@@ -98,7 +98,8 @@ exports.updateRecord = async (req, res) => {
 exports.deleteRecord = async (req, res) => {
   try {
     const { projectId, collection, id } = req.params;
-    const table = getTableName(projectId, collection);
+    const collectionName = await getCollectionName(collection);
+    const table = getTableName(projectId, collectionName);
     const sql = `DELETE FROM "${table}" WHERE id = $1 RETURNING *`;
     const result = await db.query(sql, [id]);
 

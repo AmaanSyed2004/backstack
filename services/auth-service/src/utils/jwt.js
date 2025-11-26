@@ -1,14 +1,13 @@
-const jwt = require('jsonwebtoken');
-const secret = process.env.AUTH_JWT_SECRET;
-const expiresIn = process.env.JWT_EXP || '365d';
+const jwt = require("jsonwebtoken");
+const secret = process.env.JWT_SECRET;
+const expiresIn = process.env.JWT_EXP || "365d";
 
 if (!secret) {
-  console.error('AUTH_JWT_SECRET not set!');
+  console.error("JWT_SECRET not set");
   process.exit(1);
 }
 
 function signToken(payload) {
-
   return jwt.sign(payload, secret, { expiresIn });
 }
 
