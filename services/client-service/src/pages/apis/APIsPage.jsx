@@ -236,7 +236,7 @@ const APIsPage = () => {
             <p className="text-zinc-400">Manage your projects and keys</p>
           </div>
 
-          <div className="flex gap-3 w-full md:w-auto">
+          {/* <div className="flex gap-3 w-full md:w-auto">
             <button
               onClick={() => setIsCreatingProject(!isCreatingProject)}
               className="bg-zinc-100 hover:bg-zinc-200 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium whitespace-nowrap"
@@ -244,7 +244,7 @@ const APIsPage = () => {
               <FolderPlus className="w-4 h-4" />
               New Project
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Create Project Form */}

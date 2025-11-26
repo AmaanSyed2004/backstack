@@ -18,14 +18,14 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<AuthPage />} />
-        <Route
+        {/* <Route
           path="/dashboard"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <DashboardPage />
             </ProtectedRoute>
           }
-        />
+        /> */}
         {/* <Route
           path="/projects"
           element={

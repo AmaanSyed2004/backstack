@@ -5,8 +5,11 @@ export default function Navbar() {
     <nav className="bg-gray-800 text-white p-3 flex justify-between">
       <span className="font-bold text-lg">BackStack</span>
       <div className="space-x-4">
-        <Link to="/dashboard" className="hover:underline">
+        {/* <Link to="/dashboard" className="hover:underline">
           Dashboard
+        </Link> */}
+        <Link to="/project" className="hover:underline">
+          Project
         </Link>
         {/* <Link to="/projects" className="hover:underline">
           Projects
@@ -23,9 +26,6 @@ export default function Navbar() {
         <Link to="/docs" className="hover:underline">
           Docs
         </Link>
-        <Link to="/project" className="hover:underline">
-          Project
-        </Link> 
       </div>
     </nav>
   );

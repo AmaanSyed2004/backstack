@@ -23,7 +23,8 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
+    // { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
+    { icon: BookOpen, label: "Projects", href: "/project" },
     { icon: Globe, label: "APIs", href: "/apis" },
     { icon: Lock, label: "Auth Service", href: "/auth-service" },
     { icon: Database, label: "Schema Registry", href: "/schemas" },
@@ -31,7 +32,6 @@ const Sidebar = () => {
     { icon: BarChart3, label: "Usage & Billing", href: "/billing" },
     { icon: BookOpen, label: "Docs", href: "/docs" },
     { icon: Settings, label: "Settings", href: "/settings" },
-    { icon: BookOpen, label: "Projects", href: "/project" },
   ];
 
   return (
@@ -43,7 +43,7 @@ const Sidebar = () => {
       >
         <Menu className="w-6 h-6 text-white" />
       </button>
-
+      
       {/* Sidebar */}
       <aside
         className={`${
