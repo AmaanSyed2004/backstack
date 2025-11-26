@@ -1,9 +1,8 @@
+// SchemaRegistryPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import {
   Database,
   Plus,
-  Edit2,
   Trash2,
   Copy,
   Search,
@@ -15,8 +14,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Sidebar from "@/components/Sidebar";
 import api from "@/api/axios";
 
+const dataTypes = [
+  "String",
+  "Integer",
+  "Decimal",
+  "UUID",
+  "Timestamp",
+  "JSON",
+  "Boolean",
+  "Array",
+];
 
-const SchemasPage = () => {
+export default function SchemaRegistryPage() {
   // Projects
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
@@ -32,10 +41,9 @@ const SchemasPage = () => {
 
   // UI state
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("lastUpdated");
+  const [selectedSchema, setSelectedSchema] = useState(null);
 
-  // create schema modal
+  // Create schema modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: "",
@@ -45,9 +53,80 @@ const SchemasPage = () => {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
 
-  // selected schema to view details
-  const [selectedSchema, setSelectedSchema] = useState(null);
+  // Fields builder (create-time)
+  const [fields, setFields] = useState([]);
+  const [newField, setNewField] = useState({
+    name: "",
+    type: "String",
+    required: false,
+    description: "",
+  });
 
+  // ensure auth header (api.interceptor may already do it)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    else delete api.defaults.headers.common["Authorization"];
+  }, []);
+
+  // Load projects
+  useEffect(() => {
+    let mounted = true;
+    const loadProjects = async () => {
+      setProjectsLoading(true);
+      setProjectsError(null);
+      try {
+        const res = await api.get("/account/project");
+        const payload = res?.data;
+        let list = [];
+
+        if (payload?.success === true && Array.isArray(payload.projects)) {
+          list = payload.projects;
+        } else if (Array.isArray(payload)) {
+          list = payload;
+        } else if (Array.isArray(payload?.data)) {
+          list = payload.data;
+        } else {
+          list = payload?.projects || payload?.data || [];
+        }
+
+        const normalized = list.map((p) => ({
+          id: p.id,
+          name: p.name || "Untitled Project",
+          description: p.description || p.plan || "",
+          requests: p.requests ?? "0",
+          raw: p,
+        }));
+
+        if (!mounted) return;
+        setProjects(normalized);
+
+        // default select first
+        if (!selectedProject && normalized.length > 0) {
+          setSelectedProject(normalized[0]);
+        } else if (selectedProject) {
+          const found = normalized.find((x) => x.id === selectedProject.id);
+          if (found) setSelectedProject(found);
+        }
+      } catch (err) {
+        console.error("Failed to load projects:", err);
+        setProjectsError(
+          err?.response?.data || err?.message || "Failed to load projects"
+        );
+        setProjects([]);
+      } finally {
+        if (mounted) setProjectsLoading(false);
+      }
+    };
+
+    loadProjects();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load schemas for selected project
   useEffect(() => {
     if (!selectedProject) {
       setSchemas([]);
@@ -59,20 +138,28 @@ const SchemasPage = () => {
       setSchemasLoading(true);
       setSchemasError(null);
       try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        }
-        const { data } = await api.get(
-          `/schema/${selectedProject.id}`
-        );
+        const res = await api.get(`/schema/${selectedProject.id}`);
+        const data = res?.data;
+        // adapt controller return shapes:
+        const list = Array.isArray(data)
+          ? data
+          : data?.collections || data?.schemas || data?.data || [];
         if (cancelled) return;
-        setSchemas(Array.isArray(data) ? data : []);
-        setSelectedSchema(Array.isArray(data) && data.length ? data[0] : null);
+        const normalized = list.map((c) => {
+          const fieldsCount =
+            (c.schemaJson && Array.isArray(c.schemaJson.fields)
+              ? c.schemaJson.fields.length
+              : Array.isArray(c.fields)
+              ? c.fields.length
+              : c.fields ?? 0) || 0;
+          return { ...c, fields: fieldsCount };
+        });
+        setSchemas(normalized);
+        setSelectedSchema(normalized.length ? normalized[0] : null);
       } catch (err) {
         console.error("load schemas err:", err);
         setSchemasError(
-          err.response?.data?.error || err.message || "Failed to load schemas"
+          err?.response?.data?.error || err?.message || "Failed to load schemas"
         );
         setSchemas([]);
         setSelectedSchema(null);
@@ -86,142 +173,173 @@ const SchemasPage = () => {
     };
   }, [selectedProject]);
 
-    useEffect(() => {
-      let mounted = true;
-      const token = localStorage.getItem("token");
-      if (token) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
-
-      const loadProjects = async () => {
-        setProjectsLoading(true);
-        setProjectsError(null);
-        try {
-          const res = await api.get("/account/project");
-          // backend returns: { success: true, projects: [...] }
-          const payload = res?.data;
-          let list = [];
-          if (payload?.success === true && Array.isArray(payload.projects)) {
-            list = payload.projects;
-          } else if (Array.isArray(payload)) {
-            // fallback if backend returns raw array
-            list = payload;
-          } else if (Array.isArray(payload?.data)) {
-            list = payload.data;
-          } else {
-            // unexpected shape: try to read whatever is useful
-            list = payload?.projects || payload?.data || [];
-          }
-
-          // normalize each project to UI fields
-          const normalized = list.map((p) => ({
-            id: p.id,
-            name: p.name || "Untitled Project",
-            description: p.description || p.plan || "",
-            status: p.status || "Active",
-            createdAt:
-              (p.createdAt &&
-                new Date(p.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })) ||
-              // fallback to createdAt string or now
-              p.createdAt ||
-              new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }),
-            requests: p.requests ?? "0",
-            team: p.team ?? 1,
-            raw: p,
-          }));
-
-          if (!mounted) return;
-          setProjects(normalized);
-        } catch (err) {
-          console.error("Failed to load projects:", err);
-          setProjectsError(
-            err?.response?.data || err?.message || "Failed to load projects"
-          );
-          setProjects([]);
-        } finally {
-          if (mounted) setProjectsLoading(false);
-        }
-      };
-
-      loadProjects();
-
-      return () => {
-        mounted = false;
-      };
-    }, []);
-
-  // derived visible list (filter / sort)
+  // derived visible list (search)
   const visibleSchemas = useMemo(() => {
-    let list = schemas.slice();
-    if (statusFilter !== "All")
-      list = list.filter((s) => s.status === statusFilter);
+    let list = Array.isArray(schemas) ? schemas.slice() : [];
     if (query)
       list = list.filter((s) =>
-        s.name.toLowerCase().includes(query.toLowerCase())
+        (s.name || "").toLowerCase().includes(query.toLowerCase())
       );
-    if (sortBy === "lastUpdated")
-      list.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
-    if (sortBy === "fields")
-      list.sort((a, b) => (b.fields || 0) - (a.fields || 0));
     return list;
-  }, [schemas, statusFilter, query, sortBy]);
+  }, [schemas, query]);
 
-  // create schema POST
+  // Map your UI types -> JSON Schema types
+  const uiToJsonType = (t) => {
+    switch (t) {
+      case "String":
+      case "UUID":
+      case "Timestamp":
+        return "string";
+      case "Integer":
+        return "integer";
+      case "Decimal":
+        return "number";
+      case "Boolean":
+        return "boolean";
+      case "JSON":
+        return "object";
+      case "Array":
+        return "array";
+      default:
+        return "string";
+    }
+  };
+
+  // slug helper
+  const slugify = (s) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+  // Build the exact schema JSON object per your example
+  const buildSchemaJsonObject = (collectionName, fieldsArray) => {
+    const idSlug =
+      slugify(collectionName) || `schema-${Date.now().toString(36)}`;
+    const properties = {};
+    const required = [];
+
+    (fieldsArray || []).forEach((f) => {
+      if (!f.name) return;
+      properties[f.name] = { type: uiToJsonType(f.type) };
+      // optional: include any extra metadata (we only set type to match your sample)
+      if (f.required) required.push(f.name);
+    });
+
+    const schemaObj = {
+      $id: `https://backstack.dev/schemas/${idSlug}`,
+      type: "object",
+      properties,
+    };
+
+    if (required.length > 0) schemaObj.required = required;
+
+    return schemaObj;
+  };
+
+  // Create schema handler (sends { name, fields: <schemaObject> } exactly as you requested)
   const handleCreateSchema = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setCreateError(null);
     if (!selectedProject) return setCreateError("Select a project first");
     if (!createForm.name.trim())
       return setCreateError("Schema name is required");
 
+    if (!Array.isArray(fields) || fields.length === 0)
+      return setCreateError(
+        "Add at least one field before creating the schema"
+      );
+
     setCreating(true);
     try {
+      const schemaJsonObj = buildSchemaJsonObject(
+        createForm.name.trim(),
+        fields
+      );
+
       const payload = {
         name: createForm.name.trim(),
-        version: createForm.version || "1.0.0",
-        description: createForm.description || "",
-        fieldsList: [],
+        fields: schemaJsonObj, // EXACT shape requested
       };
-      const { data } = await axios.post(
-        `/schema/${selectedProject.id}`,
-        payload
-      );
-      // optimistic: add to list and select
-      setSchemas((prev) => [data, ...prev]);
-      setSelectedSchema(data);
+
+      // POST to the endpoint you specified — unchanged
+      const res = await api.post(`/schema/${selectedProject.id}`, payload);
+
+      // controller may return { collection } or direct object
+      const created = res?.data?.collection || res?.data || null;
+
+      const toAdd = created || {
+        id: Math.random().toString(36).slice(2),
+        projectId: selectedProject.id,
+        name: payload.name,
+        schemaJson: payload.fields,
+        version: createForm.version,
+        description: createForm.description,
+        status: "Active",
+        lastUpdated: new Date().toISOString().split("T")[0],
+        fields: Object.keys(payload.fields.properties || {}).length,
+      };
+
+      // normalize
+      if (
+        created &&
+        created.schemaJson &&
+        Array.isArray(created.schemaJson.fields)
+      ) {
+        created.fields = created.schemaJson.fields.length;
+      } else if (
+        created &&
+        created.schemaJson &&
+        created.schemaJson.properties
+      ) {
+        created.fields = Object.keys(created.schemaJson.properties).length;
+      }
+
+      setSchemas((prev) => [toAdd, ...(prev || [])]);
+      setSelectedSchema(toAdd);
+
+      // reset
       setShowCreateModal(false);
       setCreateForm({ name: "", version: "1.0.0", description: "" });
+      setFields([]);
+      setNewField({
+        name: "",
+        type: "String",
+        required: false,
+        description: "",
+      });
     } catch (err) {
       console.error("create schema err:", err);
       setCreateError(
-        err.response?.data?.error || err.message || "Failed to create schema"
+        err?.response?.data?.error || err?.message || "Failed to create schema"
       );
     } finally {
       setCreating(false);
     }
   };
 
-  const handleExportSelected = () => {
-    if (!selectedSchema) return;
-    const blob = new Blob([JSON.stringify(selectedSchema, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${selectedSchema.name
-      .replace(/\s+/g, "-")
-      .toLowerCase()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Delete schema
+  const handleDeleteSchema = async (schema) => {
+    if (!schema) return;
+    if (!confirm(`Delete schema "${schema.name}"?`)) return;
+    try {
+      await api.delete(`/schema/${selectedProject.id}/${schema.id}`);
+      setSchemas((prev) => (prev || []).filter((s) => s.id !== schema.id));
+      if (selectedSchema?.id === schema.id) setSelectedSchema(null);
+    } catch (err) {
+      console.error("delete schema err:", err);
+      alert(
+        err?.response?.data?.error || err?.message || "Failed to delete schema"
+      );
+    }
+  };
+
+  // helper: format date
+  const formatDate = (d) => {
+    if (!d) return "—";
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return d;
+    return dt.toISOString().split("T")[0];
   };
 
   return (
@@ -268,31 +386,6 @@ const SchemasPage = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm">
-              <label className="text-gray-400 text-xs mr-2">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent outline-none text-white text-sm"
-              >
-                <option value="All">All</option>
-                <option value="Active">Active</option>
-                <option value="Deprecated">Deprecated</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm">
-              <label className="text-gray-400 text-xs mr-2">Sort</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent outline-none text-white text-sm"
-              >
-                <option value="lastUpdated">Last Updated</option>
-                <option value="fields">Field Count</option>
-              </select>
-            </div>
-
             <Button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 bg-white hover:bg-gray-100 text-black font-semibold"
@@ -302,7 +395,7 @@ const SchemasPage = () => {
           </div>
         </div>
 
-        {/* Projects selector row */}
+        {/* Projects + Schemas */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1 space-y-2">
             <div className="flex items-center justify-between">
@@ -323,7 +416,10 @@ const SchemasPage = () => {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setSelectedProject(p)}
+                    onClick={() => {
+                      setSelectedProject(p);
+                      setSelectedSchema(null);
+                    }}
                     className={`w-full text-left p-3 rounded-lg transition-colors border ${
                       active
                         ? "border-emerald-600 bg-zinc-800"
@@ -351,7 +447,6 @@ const SchemasPage = () => {
             </div>
           </div>
 
-          {/* Schemas list & details */}
           <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
               <div className="text-sm text-gray-400 mb-1">
@@ -372,7 +467,7 @@ const SchemasPage = () => {
                 </Card>
               )}
 
-              {visibleSchemas.map((schema) => {
+              {(visibleSchemas || []).map((schema) => {
                 const selected =
                   selectedSchema && selectedSchema.id === schema.id;
                 return (
@@ -390,7 +485,7 @@ const SchemasPage = () => {
                             {schema.name}
                           </h3>
                           <p className="text-sm text-gray-400 mt-1">
-                            Version {schema.version}
+                            Version {schema.version || "—"}
                           </p>
                         </div>
                         <span
@@ -400,7 +495,7 @@ const SchemasPage = () => {
                               : "bg-gray-500/20 text-gray-300"
                           }`}
                         >
-                          {schema.status}
+                          {schema.status || "Active"}
                         </span>
                       </div>
 
@@ -408,23 +503,36 @@ const SchemasPage = () => {
                         <div>
                           <p className="text-xs text-gray-400">Fields</p>
                           <p className="text-lg font-semibold text-white">
-                            {schema.fields}
+                            {schema.fields ??
+                              schema.schemaJson?.properties?.length ??
+                              0}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-400">Last Updated</p>
                           <p className="text-sm text-white">
-                            {schema.lastUpdated}
+                            {formatDate(schema.lastUpdated)}
                           </p>
                         </div>
                         <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 hover:bg-zinc-700 rounded transition-colors">
-                            <Edit2 className="w-4 h-4 text-gray-400" />
-                          </button>
-                          <button className="p-2 hover:bg-zinc-700 rounded transition-colors">
+                          <button
+                            className="p-2 hover:bg-zinc-700 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(
+                                JSON.stringify(schema, null, 2)
+                              );
+                            }}
+                          >
                             <Copy className="w-4 h-4 text-gray-400" />
                           </button>
-                          <button className="p-2 hover:bg-zinc-700 rounded transition-colors">
+                          <button
+                            className="p-2 hover:bg-zinc-700 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSchema(schema);
+                            }}
+                          >
                             <Trash2 className="w-4 h-4 text-gray-400" />
                           </button>
                         </div>
@@ -434,13 +542,14 @@ const SchemasPage = () => {
                 );
               })}
 
-              {!schemasLoading && visibleSchemas.length === 0 && (
-                <Card className="bg-zinc-900 border border-zinc-800 p-6">
-                  <p className="text-gray-400">
-                    No schemas found for this project
-                  </p>
-                </Card>
-              )}
+              {!schemasLoading &&
+                (!visibleSchemas || visibleSchemas.length === 0) && (
+                  <Card className="bg-zinc-900 border border-zinc-800 p-6">
+                    <p className="text-gray-400">
+                      No schemas found for this project
+                    </p>
+                  </Card>
+                )}
             </div>
 
             {/* detail column */}
@@ -463,10 +572,10 @@ const SchemasPage = () => {
                         <div>
                           <p className="text-sm text-gray-400">Version</p>
                           <p className="text-lg font-semibold text-white">
-                            {selectedSchema.version}
+                            {selectedSchema.version || "—"}
                           </p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {selectedSchema.description}
+                            {selectedSchema.description || ""}
                           </p>
                         </div>
 
@@ -478,11 +587,26 @@ const SchemasPage = () => {
                                 : "bg-gray-500/20 text-gray-300"
                             }`}
                           >
-                            {selectedSchema.status}
+                            {selectedSchema.status || "Active"}
                           </span>
                           <div className="flex items-center gap-2">
                             <Button
-                              onClick={handleExportSelected}
+                              onClick={() => {
+                                const blob = new Blob(
+                                  [JSON.stringify(selectedSchema, null, 2)],
+                                  { type: "application/json" }
+                                );
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `${(
+                                  selectedSchema.name || "schema"
+                                )
+                                  .replace(/\s+/g, "-")
+                                  .toLowerCase()}.json`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }}
                               className="bg-white text-black hover:bg-gray-100 font-semibold px-3 py-1"
                             >
                               <Download className="w-4 h-4" /> Export
@@ -494,20 +618,24 @@ const SchemasPage = () => {
                       <div className="mt-3">
                         <p className="text-xs text-gray-400 mb-2">Fields</p>
                         <div className="space-y-2">
-                          {(selectedSchema.fieldsList || []).map((f, idx) => (
+                          {Object.entries(
+                            selectedSchema.schemaJson?.properties || {}
+                          ).map(([k, v], idx) => (
                             <div
                               key={idx}
                               className="p-3 bg-zinc-800/50 rounded border border-zinc-700 flex items-center justify-between"
                             >
                               <div>
                                 <p className="font-mono text-sm text-white">
-                                  {f.name}
+                                  {k}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                  {f.type}
+                                  {v.type}
                                 </p>
                               </div>
-                              {f.required && (
+                              {(
+                                selectedSchema.schemaJson?.required || []
+                              ).includes(k) && (
                                 <span className="text-xs px-2 py-1 bg-red-500/20 text-red-300 rounded">
                                   Required
                                 </span>
@@ -515,19 +643,28 @@ const SchemasPage = () => {
                             </div>
                           ))}
                         </div>
+                        <div className="mt-3">
+                          <p className="mt-2 text-xs text-gray-500">
+                            Collections are created with fields at creation time
+                            only.
+                          </p>
+                        </div>
                       </div>
 
                       <div className="mt-4 text-xs text-gray-400">
                         <div>
                           Last Updated:{" "}
                           <span className="text-white">
-                            {selectedSchema.lastUpdated}
+                            {formatDate(selectedSchema.lastUpdated)}
                           </span>
                         </div>
                         <div>
                           Field Count:{" "}
                           <span className="text-white">
-                            {selectedSchema.fields}
+                            {selectedSchema.fields ??
+                              Object.keys(
+                                selectedSchema.schemaJson?.properties || {}
+                              ).length}
                           </span>
                         </div>
                       </div>
@@ -585,7 +722,7 @@ const SchemasPage = () => {
                       setCreateForm({ ...createForm, name: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white"
-                    placeholder="My Schema"
+                    placeholder="Bookshelf"
                   />
                 </div>
 
@@ -607,33 +744,124 @@ const SchemasPage = () => {
                   </div>
                   <div>
                     <label className="block text-sm text-gray-300 mb-1">
-                      Status
+                      Description
                     </label>
-                    <select
-                      defaultValue="Active"
+                    <input
+                      value={createForm.description}
+                      onChange={(e) =>
+                        setCreateForm({
+                          ...createForm,
+                          description: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white"
-                    >
-                      <option>Active</option>
-                      <option>Deprecated</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm text-gray-300 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={createForm.description}
-                    onChange={(e) =>
-                      setCreateForm({
-                        ...createForm,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-white resize-none"
-                    rows={3}
-                  />
+                {/* Fields builder */}
+                <div className="p-4 border border-zinc-700 rounded bg-zinc-800">
+                  <h4 className="text-white font-semibold mb-3">
+                    Fields (add at least one)
+                  </h4>
+
+                  {fields.map((f, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-2 bg-zinc-900 border border-zinc-700 rounded mb-2"
+                    >
+                      <div className="flex-1">
+                        <p className="text-white text-sm">{f.name}</p>
+                        <p className="text-gray-400 text-xs">
+                          {f.type} {f.required ? "• required" : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFields(fields.filter((_, i) => i !== idx))
+                        }
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      placeholder="field name"
+                      value={newField.name}
+                      onChange={(e) =>
+                        setNewField({ ...newField, name: e.target.value })
+                      }
+                      className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white col-span-1 md:col-span-1"
+                    />
+                    <select
+                      value={newField.type}
+                      onChange={(e) =>
+                        setNewField({ ...newField, type: e.target.value })
+                      }
+                      className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white col-span-1 md:col-span-1"
+                    >
+                      {dataTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newField.required}
+                        onChange={(e) =>
+                          setNewField({
+                            ...newField,
+                            required: e.target.checked,
+                          })
+                        }
+                        className="w-4 h-4 bg-zinc-800 border border-zinc-700 rounded accent-emerald-500"
+                      />
+                      <label className="text-sm text-gray-400">Required</label>
+                      <div className="flex-1" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newField.name.trim()) return;
+                          setFields([
+                            ...fields,
+                            {
+                              name: newField.name.trim(),
+                              type: newField.type,
+                              required: !!newField.required,
+                              description: newField.description || "",
+                            },
+                          ]);
+                          setNewField({
+                            name: "",
+                            type: "String",
+                            required: false,
+                            description: "",
+                          });
+                        }}
+                        className="ml-auto bg-white text-black font-semibold px-3 py-2 rounded"
+                      >
+                        Add Field
+                      </button>
+                    </div>
+
+                    <textarea
+                      value={newField.description}
+                      onChange={(e) =>
+                        setNewField({
+                          ...newField,
+                          description: e.target.value,
+                        })
+                      }
+                      placeholder="field description (optional)"
+                      className="col-span-1 md:col-span-3 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white"
+                    />
+                  </div>
                 </div>
 
                 {createError && (
@@ -663,6 +891,4 @@ const SchemasPage = () => {
       </main>
     </div>
   );
-};
-
-export default SchemasPage;
+}
