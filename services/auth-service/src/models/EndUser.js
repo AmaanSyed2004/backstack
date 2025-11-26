@@ -29,7 +29,7 @@ const endUser = sequelize.define(
     },
   },
   {
-    tableName: "Users",
+    tableName: "endUsers",
     underscored: true,
     timestamps: true,
     indexes: [

@@ -21,7 +21,7 @@ app.use(express.json());
 
 app.use("/auth", require("./routes/auth.routes"));
 app.use("/project", require("./routes/project.routes"));
-
+app.use("/data", require("./routes/data.routes"));
 app.get("/health", (req, res) => {
   res.send("OK");
 });
