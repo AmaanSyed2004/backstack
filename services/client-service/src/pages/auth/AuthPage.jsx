@@ -21,7 +21,7 @@ const AuthPage = () => {
         });
 
         localStorage.setItem("token", res.data.token);
-        window.location.href = "/dashboard";
+        window.location.href = "/project";
       } else {
         // SIGNUP API
         const res = await api.post("account/auth/signup", {
