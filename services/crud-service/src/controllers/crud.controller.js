@@ -11,6 +11,11 @@ const getTableName = (pid, coll) => `data_${pid}_${coll}`;
 exports.createRecord = async (req, res) => {
   try {
     const { projectId, collection } = req.params;
+    const owner_id = req.headers['x-auth-user-id'];
+    if(!owner_id){
+      return res.status(500).json({ error: 'owner_id is required' });
+    }
+    req.body.owner_id = owner_id;
     const schemaData = await getSchema(projectId, collection);
     if (!schemaData) return res.status(404).json({ error: 'Schema not found' });
 
@@ -20,6 +25,7 @@ exports.createRecord = async (req, res) => {
     const collectionName = await getCollectionName(collection);
     const table = await ensureTable(projectId, collectionName, schemaData.schemaJson);
     const fields = Object.keys(req.body);
+
     const placeholders = fields.map((_, i) => `$${i + 1}`);
     const sql = `INSERT INTO "${table}" (${fields
       .map((f) => `"${f}"`)
@@ -40,10 +46,15 @@ exports.listRecords = async (req, res) => {
     if (!schemaData) return res.status(404).json({ error: 'Schema not found' });
     const collectionName = await getCollectionName(collection);
     const table = await ensureTable(projectId, collectionName, schemaData.schemaJson);
+
+    const owner_id = req.headers['x-auth-user-id'];
+    if(!owner_id){
+      return res.status(500).json({ error: 'owner_id is required' });
+    }
     const limit = Math.min(parseInt(req.query.limit || 25), 100);
     const offset = parseInt(req.query.offset || 0);
-    const sql = `SELECT * FROM "${table}" ORDER BY id DESC LIMIT $1 OFFSET $2`;
-    const result = await db.query(sql, [limit, offset]);
+    const sql = `SELECT * FROM "${table}" WHERE owner_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`;
+    const result = await db.query(sql, [owner_id, limit, offset]);
     res.json(result.rows);
   } catch (err) {
     logger.error(err);
@@ -58,8 +69,12 @@ exports.getRecord = async (req, res) => {
     if (!schemaData) return res.status(404).json({ error: 'Schema not found' });
     const collectionName = await getCollectionName(collection);
     const table = getTableName(projectId, collectionName);
-    const sql = `SELECT * FROM "${table}" WHERE id = $1`;
-    const result = await db.query(sql, [id]);
+    const owner_id = req.headers['x-auth-user-id'];
+    if(!owner_id){
+      return res.status(500).json({ error: 'owner_id is required' });
+    }
+    const sql = `SELECT * FROM "${table}" WHERE id = $1 AND owner_id = $2`;
+    const result = await db.query(sql, [id, owner_id]);
 
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json(result.rows[0]);
@@ -80,12 +95,16 @@ exports.updateRecord = async (req, res) => {
       return res.status(400).json({ errors: validator.errors });
     const collectionName = await getCollectionName(collection);
     const table = getTableName(projectId, collectionName);
+    const owner_id = req.headers['x-auth-user-id'];
+    if(!owner_id){
+      return res.status(500).json({ error: 'owner_id is required' });
+    }
     const fields = Object.keys(req.body);
     const setClause = fields.map((f, i) => `"${f}" = $${i + 1}`).join(', ');
     const sql = `UPDATE "${table}" SET ${setClause}, updated_at = now() WHERE id = $${
       fields.length + 1
-    } RETURNING *`;
-    const result = await db.query(sql, [...Object.values(req.body), id]);
+    } AND owner_id = $${fields.length + 2} RETURNING *`;
+    const result = await db.query(sql, [...Object.values(req.body), id, owner_id]);
 
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json(result.rows[0]);
@@ -100,8 +119,13 @@ exports.deleteRecord = async (req, res) => {
     const { projectId, collection, id } = req.params;
     const collectionName = await getCollectionName(collection);
     const table = getTableName(projectId, collectionName);
-    const sql = `DELETE FROM "${table}" WHERE id = $1 RETURNING *`;
-    const result = await db.query(sql, [id]);
+    const owner_id = req.headers['x-auth-user-id'];
+    if(!owner_id){
+      return res.status(500).json({ error: 'owner_id is required' });
+    }
+
+    const sql = `DELETE FROM "${table}" WHERE id = $1 AND owner_id = $2 RETURNING *`;
+    const result = await db.query(sql, [id, owner_id]);
 
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ deleted: result.rows[0] });

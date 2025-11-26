@@ -15,12 +15,13 @@ async function ensureTable(projectId, collection, schema) {
   const tableName = `data_${projectId}_${collection}`;
   const props = schema.fields.properties || {};
   const required = new Set(schema.required || []);
-
+//owner_id is a uuid
   await db.query(`
     CREATE TABLE IF NOT EXISTS "${tableName}" (
       id BIGSERIAL PRIMARY KEY,
       created_at TIMESTAMPTZ DEFAULT now(),
-      updated_at TIMESTAMPTZ DEFAULT now()
+      updated_at TIMESTAMPTZ DEFAULT now(),
+      owner_id UUID
     );
   `);
 
