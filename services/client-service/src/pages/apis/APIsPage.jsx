@@ -20,9 +20,7 @@ import api from "@/api/axios";
 const APIsPage = () => {
   // --- State for Projects ---
   const [projects, setProjects] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    localStorage.getItem("selectedProject") || null
-  );
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
@@ -60,7 +58,6 @@ const APIsPage = () => {
           if (!selectedProjectId) {
             const firstId = fetchedProjects[0].id;
             setSelectedProjectId(firstId);
-            localStorage.setItem("selectedProject", firstId);
           } else {
             // Ensure stored project still exists
             const stillExists = fetchedProjects.some(
@@ -69,7 +66,6 @@ const APIsPage = () => {
             if (!stillExists) {
               const firstId = fetchedProjects[0].id;
               setSelectedProjectId(firstId);
-              localStorage.setItem("selectedProject", firstId);
             }
           }
         }
@@ -140,7 +136,6 @@ const APIsPage = () => {
       const newProject = { id: res.data.projectId, name: newProjectName };
       setProjects((prev) => [...prev, newProject]);
       setSelectedProjectId(newProject.id);
-      localStorage.setItem("selectedProject", newProject.id);
 
       setIsCreatingProject(false);
       setNewProjectName("");
@@ -152,7 +147,6 @@ const APIsPage = () => {
 
   const handleSelectProject = (projectId) => {
     setSelectedProjectId(projectId);
-    localStorage.setItem("selectedProject", projectId);
   };
 
   const createNewKey = async () => {
