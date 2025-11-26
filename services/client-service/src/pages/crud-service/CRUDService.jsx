@@ -117,7 +117,7 @@ const CRUDService = () => {
   // This should point to your **API gateway** that fronts the CRUD service.
   // Example: VITE_API_BASE_URL = "https://api.backstack.dev"
   const BASE_URL = `${
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000"
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
   }/crud`;
 
   // 1) Fetch projects
@@ -304,7 +304,7 @@ const CRUDService = () => {
                     </h3>
                     <EndpointCard
                       method="POST"
-                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.name}`}
+                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.id}`}
                       description="Insert a new record into the collection."
                       body={selectedCollection.fields}
                     />
@@ -318,7 +318,7 @@ const CRUDService = () => {
                     </h3>
                     <EndpointCard
                       method="GET"
-                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.name}?limit=25&offset=0`}
+                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.id}?limit=25&offset=0`}
                       description="Retrieve a paginated list of records."
                     />
                   </div>
@@ -330,7 +330,7 @@ const CRUDService = () => {
                     </h3>
                     <EndpointCard
                       method="GET"
-                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.name}/:id`}
+                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.id}/:id`}
                       description="Retrieve a single record by its ID."
                     />
                   </div>
@@ -343,7 +343,7 @@ const CRUDService = () => {
                     </h3>
                     <EndpointCard
                       method="PUT"
-                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.name}/:id`}
+                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.id}/:id`}
                       description="Update an existing record by ID."
                       body={selectedCollection.fields}
                     />
@@ -356,7 +356,7 @@ const CRUDService = () => {
                     </h3>
                     <EndpointCard
                       method="DELETE"
-                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.name}/:id`}
+                      url={`${BASE_URL}/${selectedProjectId}/${selectedCollection.id}/:id`}
                       description="Permanently remove a record by ID."
                     />
                   </div>
